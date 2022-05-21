@@ -2,7 +2,7 @@ import sys
 import tensorflow as tf
 import numpy as np
 import scipy
-import time
+
 
 np.random.seed(0)
 tf.set_random_seed(0)
@@ -47,8 +47,6 @@ class NEST1:
         self.d = self.nmod*self.R
         #frequencies
         self.tf_S = tf.Variable(np.random.randn(self.m, self.d)/(2*np.pi), dtype=tf.float32)
-        #self.tf_S = tf.constant(np.random.randn(self.m, self.d)/(2*np.pi), dtype=tf.float32)
-        #self.tf_S = tf.Variable(np.random.rand(self.m, self.d)/(2*np.pi), dtype=tf.float32)
 
         #weight vect.
         #self.w_mu = tf.Variable(np.zeros([2*self.m,1]), dtype=tf.float32)

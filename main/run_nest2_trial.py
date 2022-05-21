@@ -1,9 +1,8 @@
 import click
 import numpy as np
-from models.NEST1 import NEST1
+from models.NEST2 import NEST2
 from data.data_loading import load_data
     
-
 
 @click.command()
 @click.argument("train_path")
@@ -20,7 +19,7 @@ def run_trial(train_path, test_path, rank, lr, batchsize, nepoch, m):
     print("Data loaded")
 
     nvecs = ind_test.max(axis=0)+1
-    model = NEST1(ind, nvecs, rank, y, m, batchsize, lr)
+    model = NEST2(ind, nvecs, rank, y, m, batchsize, lr)
     model.train(nepoch=nepoch)
     print("Model finished training\n")
     y_pred = model.test(ind_test)

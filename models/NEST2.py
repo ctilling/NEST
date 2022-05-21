@@ -1,9 +1,7 @@
-import sys
 import tensorflow as tf
 import numpy as np
 import scipy
 
-import time
 
 np.random.seed(0)
 tf.set_random_seed(0)
@@ -39,25 +37,15 @@ class NEST2:
         log_v_minus = [tf.math.log_sigmoid(-self.tf_v_hat[k]) for k in range(self.nmod)]
         cum_sum = [tf.cumsum(log_v_minus[k], exclusive=True, axis=0) for k in range(self.nmod)]
         log_omega = [log_v[k] + cum_sum[k] for k in range(self.nmod)]
-        #omega = [tf.exp(log_omega[k]) for k in range(self.nmod)]
-        # define locations in each mode
-        # self.tf_theta_hat = [
-        #    tf.Variable(scipy.special.logit(np.random.rand(self.nvec[k], self.R - 1)), dtype=tf.float32) for k in
-        #    range(self.nmod)]
-        # generate parameterized sample for \theta
-        #log_theta = [tf.math.log_sigmoid(self.tf_theta_hat[k]) for k in range(self.nmod)]
-        # concate sociability and locations
+
         self.tf_U = [log_omega[k] for k in range(self.nmod)]
 
         # constuct Phi
         self.d = self.nmod * self.R
         # frequencies
         self.tf_S = tf.Variable(np.random.randn(self.m, self.d) / (2 * np.pi), dtype=tf.float32)
-        # self.tf_S = tf.constant(np.random.randn(self.m, self.d)/(2*np.pi), dtype=tf.float32)
-        # self.tf_S = tf.Variable(np.random.rand(self.m, self.d)/(2*np.pi), dtype=tf.float32)
 
         # weight vect.
-        # self.w_mu = tf.Variable(np.zeros([2*self.m,1]), dtype=tf.float32)
         self.w_mu = tf.Variable(np.random.rand(2 * self.m, 1), dtype=tf.float32)
         self.w_L = tf.Variable(1.0 / self.m * np.eye(2 * self.m), dtype=tf.float32)
         w_Ltril = tf.matrix_band_part(self.w_L, -1, 0)
@@ -74,10 +62,7 @@ class NEST2:
         Phi = tf.matmul(tf_inputs, tf.transpose(self.tf_S)) * tf.constant(2 * np.pi, dtype=tf.float32)
         # N by 2M
         Phi = tf.concat([tf.cos(Phi), tf.sin(Phi)], 1)
-        #need to fix
 
-        #log_edge_prob = tf.reduce_logsumexp(tf.add_n([tf.gather(log_omega[k], self.tf_sub[:, k])
-        #                                                      for k in range(self.nmod)]))
 
         log_edge_prob = tf.concat([ tf.gather(tf.expand_dims(log_omega[k], -1), self.tf_sub[:,k]) for k in range(self.nmod) ], 1)
 
@@ -135,27 +120,23 @@ class NEST2:
     def callback(self, loss):
         print('Loss:', loss)
 
-    def train(self, ind_test, y_test, nepoch=10):
+    def train(self, nepoch=10):
         print('start')
         print(self.N / self.B)
         for iter in range(nepoch):
             curr = 0
             s = np.random.permutation(self.N)
-            # self.ind = self.ind[s]
-            # self.y = self.y[s]
             while curr < self.N:
                 batch_ind = np.random.choice(self.N, self.B, replace=False)
                 tf_dict = {self.tf_sub: self.ind[batch_ind, :], self.tf_y: self.y[batch_ind]}
-                # tf_dict = {self.tf_sub:self.ind[curr:curr+self.B,:], self.tf_y:self.y[curr:curr+self.B]}
                 curr = curr + self.B
                 _, loss = self.sess.run([self.minimizer,self.loss], feed_dict=tf_dict)
-            # print('epoch %d finished'%iter)
+            print('epoch %d finished'%iter)
             if iter % 5 == 0:
-                y_pred = self.test(ind_test)
-                mse = np.mean(np.power(y_pred - y_test, 2))
+                
                 y_pred = self.test(self.ind)
                 mse_train = np.mean(np.power(y_pred - self.y.flatten(), 2))
-                print('epoch %d, loss = %g, train mse = %g, test mse = %g' % (iter, loss, mse_train, mse))
+                print('epoch %d, loss = %g, train mse = %g' % (iter, loss, mse_train))
 
         print('tau = %g' % (np.exp(self.tf_log_tau.eval(session=self.sess))))
         print('w = ')
