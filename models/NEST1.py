@@ -1,20 +1,13 @@
 import sys
 import tensorflow as tf
 import numpy as np
-import scipy.io
-from scipy.spatial.distance import pdist
-from scipy.interpolate import griddata
-import time
-import sklearn
-from sklearn.cluster import KMeans
 import scipy
-import scipy.stats as stats
-import scipy.special
+import time
 
 np.random.seed(0)
 tf.set_random_seed(0)
 
-class SGPTF:
+class NEST1:
     #self.tf_log_lengthscale: log of RBF lengthscale
     #self.tf_log_tau: log of inverse variance
     #self.tf_y: observed entries
@@ -120,27 +113,22 @@ class SGPTF:
         for i, r in enumerate(res):
             np.savetxt(file_name+"_%d.txt"%(i),r)
 
-    def train(self, ind_test, y_test, nepoch = 10):
+    def train(self, nepoch = 10):
         print('start')
         print(self.N/self.B)
         for iter in range(nepoch):
             curr = 0
-            s = np.random.permutation(self.N)
-            #self.ind = self.ind[s]
-            #self.y = self.y[s]
             while curr < self.N:
                 batch_ind = np.random.choice(self.N, self.B, replace=False)
                 tf_dict = {self.tf_sub:self.ind[batch_ind,:], self.tf_y:self.y[batch_ind]}
-                #tf_dict = {self.tf_sub:self.ind[curr:curr+self.B,:], self.tf_y:self.y[curr:curr+self.B]}
                 curr = curr + self.B
                 self.sess.run(self.minimizer,feed_dict = tf_dict)
-            #print('epoch %d finished'%iter)
+            print('epoch %d finished'%iter)
             if iter%5==0:
-                y_pred = self.test(ind_test)
-                mse =  np.mean( np.power(y_pred - y_test, 2) )
+                print('epoch %d finished'%iter)
                 y_pred = self.test(self.ind)
                 mse_train =  np.mean( np.power(y_pred - self.y.flatten(), 2) )
-                print ('epoch %d, train mse = %g, test mse = %g'%(iter, mse_train, mse))
+                print('epoch %d, train mse = %g'%(iter, mse_train))
 
 
         print('tau = %g'%(np.exp(self.tf_log_tau.eval(session=self.sess))))
